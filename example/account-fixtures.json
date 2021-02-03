@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "version": 1
+  },
+  "fixtures": [
+    {
+      "operationId": "CreateClient",
+      "params": {
+        "client_id": "fbccf7d2-f805-4a79-bb2d-e23ed55d8537",
+        "identifier": "https://projects.dalane.cloud",
+        "description": "Client for customer applications",
+        "secret": "d62dccdf293851b7e994298d1f69620502f55c8f89131e4296d94d7ee5b637f0",
+        "redirect_uris": [
+          "http://localhost:9004/callbacks/auth",
+          "https://projects.dalane.cloud/callbacks/auth"
+        ],
+        "backchannel_logout_supported": true,
+        "backchannel_logout_uri": "http://localhost:9001/callbacks/logout",
+        "isPublic": false,
+        "client_secret_expires_at": 0,
+        "scopes": [ "openid", "admin" ],
+        "audiences": [ "https://projects.api.dalane.cloud" ],
+        "client_type": "system"
+      }
+    },
+    {
+      "operationId": "CreateClient",
+      "params": {
+        "client_id": "915be4b6-0d2e-48c7-a952-d29ade65b984",
+        "identifier": "https://myaccount.dalane.cloud",
+        "description": "Client for a user to manage their account",
+        "secret": "e8ecab2520ff8facd8d989de10a988b9f2062799e99420e227ea0cbf8f19062e",
+        "redirect_uris": [
+          "http://localhost:9000/callbacks/auth",
+          "https://myaccount.dalane.cloud/callbacks/auth"
+        ],
+        "backchannel_logout_supported": true,
+        "backchannel_logout_uri": "http://localhost:9000/callbacks/logout",
+        "isPublic": false,
+        "client_secret_expires_at": 0,
+        "scopes": [ "openid", "user" ],
+        "audiences": [ "https://accounts.api.dalane.cloud" ],
+        "client_type": "system"
+      }
+    },
+    {
+      "operationId": "CreateClient",
+      "params": {
+        "client_id": "667dc056-f1f3-430a-b0fa-ede36a909d93",
+        "identifier": "https://auth.dalane.cloud",
+        "description": "System client for the Authorization Server to authenticate users and clients",
+        "secret": "6edef8bd0ae654ca91552345a52b076ec6fe6785a18278f51cb2fc3bf6c6094a",
+        "redirect_uris": [],
+        "backchannel_logout_supported": false,
+        "backchannel_logout_uri": "",
+        "isPublic": false,
+        "client_secret_expires_at": 0,
+        "scopes": [ "create-user", "authenticate-user", "view-user", "view-client", "authenticate-client" ],
+        "audiences": [ "https://accounts.api.dalane.cloud" ],
+        "client_type": "system"
+      }
+    },
+    {
+      "operationId": "CreateClient",
+      "params": {
+        "client_id": "64f7664d-c6c2-49e7-a645-4bfe124d5451",
+        "identifier": "https://wwww.dalane.cloud",
+        "description": "Dalane Cloud Website",
+        "secret": "6edef8bd0ae654ca91552345a52b076ec6fe6785a18278f51cb2fc3bf6c6094a",
+        "redirect_uris": [
+          "http://localhost:10000/callbacks/auth",
+          "https://www.dalane.cloud/callbacks/auth"
+        ],
+        "backchannel_logout_supported": true,
+        "backchannel_logout_uri": "http://localhost:10000/callbacks/signout",
+        "isPublic": false,
+        "client_secret_expires_at": 0,
+        "scopes": [ "create-user", "authenticate-user", "view-user", "view-client", "authenticate-client" ],
+        "audiences": [ "https://accounts.api.dalane.cloud" ],
+        "client_type": "system"
+      }
+    }
+  ],
+  "fixtures-old": {
+    "services": [
+      {
+        "service_id": "44aa64d9-9438-4da5-9a36-fa3fafcdcf96",
+        "name": "Project Manager",
+        "description": "You and your team can now manage your organisation's projects, risks, assumptions, issues and dependencies in once place",
+        "provisioning": {
+          "host": "http://localhost:9003",
+          "path": "/v1/provision",
+          "client_id": "f3c8c9d6-3899-4a80-9078-41e41ec0c403",
+          "client_secret": "_YPpTF_lTj1Ly0eqLdJoFoCfKRAMELdqCPJ9SBEnyjI"
+        }
+      },
+      {
+        "service_id": "f6594530-a2fb-4a90-aa60-994e23e18082",
+        "name": "P6Quality.com",
+        "description": "Get quality reports on your Primavera P6 programmes / schedules."
+      }
+    ],
+    "users": [
+      {
+        "user_id": "26e6888c-f8de-49cc-b70e-6cbe243e86f2",
+        "name": "John Smith",
+        "email": "example@example.com",
+        "email_verified": true,
+        "password": "password",
+        "user_type": "basic"
+      },
+      {
+        "user_id": "aeaa8f58-cbc7-40df-89e9-49a5c12119f7",
+        "name": "Jane Citizen",
+        "email": "jane.c@example.com",
+        "email_verified": true,
+        "password": "password",
+        "user_type": "basic"
+      }
+    ],
+    "organisations": [
+      {
+        "organisation_id": "ca8bba55-fea9-42ad-aefd-967b613141ce",
+        "name": "Dalane Consulting Ltd",
+        "owner_id": "26e6888c-f8de-49cc-b70e-6cbe243e86f2",
+        "email": "admin@dalane.co.uk",
+        "address": {
+          "address_line_1": "49 Station Road",
+          "city": "Polegate",
+          "region": "East Sussex",
+          "postal_code": "BN26 6EA",
+          "country_code": "GB"
+        }
+      }
+    ]
+  }
+}
