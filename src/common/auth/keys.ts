@@ -1,4 +1,5 @@
 import { KEY_TYPE, KEY_OP, KEY_USE, ALGORITHM } from './constants';
+import eckles from 'eckles';
 
 export interface Jwk {
   kid:string;
@@ -43,3 +44,5 @@ export enum FORMATS {
 export enum CURVES {
   P256 = 'P-256'
 }
+
+export const createPemKeyFromJwk = async (jwk:Jwk):Promise<string> => eckles.export({ jwk: jwk });

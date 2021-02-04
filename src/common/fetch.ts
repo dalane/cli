@@ -1,7 +1,7 @@
 import fetch, { Response, RequestInit, FetchError } from 'node-fetch';
 import contentType from 'content-type';
-import { HTTP_REQUEST_METHODS, HTTP_STATUS_CODES, MEDIA_TYPES } from './constants';
-import { deserializeErrorObject, DomainError, DomainErrorCollection, ErrorObject, SerializedErrorPayload } from './errors';
+import { HTTP_REQUEST_METHODS, HTTP_STATUS_CODES, MEDIA_TYPES } from './enums';
+import { URLSearchParams } from 'url';
 
 export interface HttpRequestOptions {
   headers?: HttpRequestHeaders;
@@ -18,7 +18,7 @@ export interface HttpRequestHeaders {
 }
 
 /** POST a javascript object as a JSON string */
-export const postJson = async <RQ extends object, RP = any>(url: string, payload: RQ, options?: HttpRequestOptions): Promise<HttpSuccess<RP> | DomainErrorCollection> => {
+export const postJson = async <RequestBody extends object, ResponseBody = any, ErrorBody = any>(url: string, payload: RequestBody, options?: HttpRequestOptions): Promise<HttpSuccess<ResponseBody> | HttpError<ErrorBody>> => {
   options = options ?? {};
   if (options.headers) {
     options.headers['content-type'] = MEDIA_TYPES.JSON;
@@ -37,8 +37,9 @@ export const postJson = async <RQ extends object, RP = any>(url: string, payload
   }
 };
 
+
 /** POST a javascript object as a UrlEncoded form */
-export const postUrlEncoded = async (url: string, payload: {[key: string]: any}, options?: HttpRequestOptions): Promise<HttpSuccess<any> | DomainErrorCollection> => {
+export const postUrlEncoded = async <ResponseBody = any, ErrorBody = any>(url: string, payload: URLSearchParams, options?: HttpRequestOptions): Promise<HttpSuccess<ResponseBody> | HttpError<ErrorBody>> => {
   options = options ?? {};
   if (options.headers) {
     options.headers.accept = MEDIA_TYPES.JSON;
@@ -48,9 +49,7 @@ export const postUrlEncoded = async (url: string, payload: {[key: string]: any},
     };
   }
   try {
-    const params = new URLSearchParams();
-    Object.getOwnPropertyNames(payload).forEach(propertyName => params.append(propertyName, payload[propertyName]));
-    const response = await fetch(url, createFetchOptions(HTTP_REQUEST_METHODS.POST, params, options));
+    const response = await fetch(url, createFetchOptions(HTTP_REQUEST_METHODS.POST, payload, options));
     return handleFetchResponse(response);
   } catch (error) {
     throw parseAdapterError(error);
@@ -58,7 +57,7 @@ export const postUrlEncoded = async (url: string, payload: {[key: string]: any},
 };
 
 /** Make a GET request with the accept header as JSON */
-export const getJson = async <RP = any>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<RP> | DomainErrorCollection> => {
+export const getJson = async <ResponseBody = any, ErrorBody = any>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<ResponseBody> | HttpError<ErrorBody>> => {
   options = options ?? {};
   if (options.headers) {
     options.headers['content-type'] = MEDIA_TYPES.JSON;
@@ -78,12 +77,12 @@ const createFetchOptions = (method: HTTP_REQUEST_METHODS, body?: any, options?: 
   ...options?.headers && { headers: options.headers }
 });
 
-const handleFetchResponse = async (response: Response): Promise<HttpResponse<any> | DomainErrorCollection> => {
+const handleFetchResponse = async (response: Response): Promise<HttpResponse<any> | HttpError<any>> => {
   const contentTypeHeader = contentType.parse(response.headers.get('content-type') ?? 'text/html');
   if (MEDIA_TYPES.JSON !== contentTypeHeader.type) {
     throw new ContentError(`Expected the response to be "application/json" but got "${contentTypeHeader.type}"`);
   }
-  const body: SerializedErrorPayload = await response.json();
+  const body: any = await response.json();
   const headers: {[key: string]: any} = {};
   response.headers.forEach((value, name) => {
     headers[name] = value;
@@ -91,7 +90,7 @@ const handleFetchResponse = async (response: Response): Promise<HttpResponse<any
   if (response.ok) {
     return new HttpSuccess(response.status, response.statusText, response.url, body, headers);
   } else {
-    return parseErrorResponse(response.url, body);
+    return parseErrorResponse(response.status, response.statusText, response.url, body, response.headers);
   }
 };
 
@@ -156,7 +155,11 @@ const parseAdapterError = (error: Error): Error => {
   return error;
 };
 
-export const parseErrorResponse = (uri: string, body: SerializedErrorPayload): DomainErrorCollection => {
-  const errors: DomainError[] = body.errors.map(errorObj => deserializeErrorObject(uri, errorObj));
-  return new DomainErrorCollection(uri, errors);
+export const parseErrorResponse = (status:HTTP_STATUS_CODES, statusText:string, url:string, body:any, headers:any): HttpError<any> => {
+    return new HttpError(status, statusText, url, body, headers);
 };
+
+// export const parseErrorResponse = (uri: string, body: SerializedErroResponseBodyayload): DomainErrorCollection => {
+//   const errors: DomainError[] = body.errors.map(errorObj => deserializeErrorObject(uri, errorObj));
+//   return new DomainErrorCollection(uri, errors);
+// };

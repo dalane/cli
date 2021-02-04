@@ -1,6 +1,3 @@
-export const OAUTH_WELL_KNOWN_PATH = '/.well-known/openid-configuration';
-export const OAUTH_AUTH_SERVER = 'https://auth.dalane.cloud';
-
 export enum MEDIA_TYPES {
   HTML = 'text/html',
   JSON = 'application/json',

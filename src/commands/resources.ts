@@ -1,6 +1,4 @@
-// @ts-ignore
-import Conf from 'conf';
-import { Config } from '../config';
+import { TokenStore } from '../config';
 import { command, Command } from 'commander';
 
 /**
@@ -15,7 +13,7 @@ import { command, Command } from 'commander';
  *
  * @param config
  */
-export function createResourcesCmd(config: Conf<Config>) {
+export function createResourcesCmd(tokenStore: TokenStore) {
 	const authoriseCmd = command('resources <operation-id>');
 	authoriseCmd.description('Make API requests on resources.')
 	authoriseCmd.alias('resource');

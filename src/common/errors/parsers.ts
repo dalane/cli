@@ -1,7 +1,7 @@
 import { DomainError, DomainValidationError } from "./errors";
 import { ERROR_CODES, ATTR_ERR_SOURCE } from "./constants";
 import { createDomainUserNotRegisteredError, createDomainInvalidUserCredentialsError, createDomainInvalidClientCredentialsError, createDomainAuthenticationRequiredError, createDomainInsufficientPermissionsError, createDomainNotFoundError, createDomainPaymentError, createDomainServiceRateLimitError, createDomainServiceUnavailableError, createDomainConflictError, createDomainTokenExpiredError, createDomainInvalidTokenError, createDomainNotImplementedError, createDomainInternalServerError, createDomainInvalidSignatureError, createDomainRelatedRecordMissingError, createDomainAwaitingEmailVerificationError, createDomainAttributeError, createDomainBadRequestError } from "./factories";
-import { HTTP_STATUS_CODES } from "../constants";
+import { HTTP_STATUS_CODES } from "../enums";
 
 export function deserializeErrorObject(uri: string, errorObj: ErrorObject): DomainError {
   const { status, code, title, detail, source } = errorObj;

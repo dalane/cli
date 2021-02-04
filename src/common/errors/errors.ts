@@ -1,4 +1,4 @@
-import { HTTP_STATUS_CODES } from "../constants";
+import { HTTP_STATUS_CODES } from "../enums";
 import { ERROR_CODES, ATTR_ERR_SOURCE } from "./constants";
 import { createDomainInternalServerError } from "./factories";
 

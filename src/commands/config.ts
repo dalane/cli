@@ -1,34 +1,34 @@
-import Conf from 'conf';
 import { command, Command } from 'commander';
 import { logError, logSuccess } from '../common/console';
 import { prompt } from 'enquirer';
-import { Config } from '../config';
-import { createOAuthWellknownUri } from '../oauth';
+import { ConfigStore } from '../config';
+import { loadJsonFile } from '../common/file';
 
-const supportedEditableConfigSettings: string[] = [ 'client_id', 'oauth_auth_server' ];
+export function createConfigCmd(configStore: ConfigStore) {
 
-export function createConfigCmd(config: Conf<Config>) {
-
-	// if the oauth_auth_server changes then update the well-known uri with the new
-	// server
-	config.onDidChange('oauth_auth_server', (newValue: any, oldValue: any) => config.set('oauth_wellknown_uri', createOAuthWellknownUri(newValue)));
+	const loadCmd = command('load <path>');
+	loadCmd.description('Load config settings from a JSON or JSONC file.');
+	loadCmd.action(async (path: string, cmd: Command) => {
+		const config = await loadJsonFile(path);
+		configStore.set(config);
+	});
 
 	const setCmd = command('set <key> [value]');
 	setCmd.description('set a new config value');
 	setCmd.action((key: string, value: string, options: any, cmd: Command) => {
-		if (supportedEditableConfigSettings.includes(key) === false) {
+		if (configStore.has(key) === false) {
 			logError(`Invalid key "${key}"`);
 			return;
 		}
-		config.set(key, value);
+		configStore.set(key, value);
 		logSuccess(`"${key}" set to ${value}`);
 	});
 
 	const getCmd = command('get <key>');
 	getCmd.description('get the value of a setting');
 	getCmd.action((key: string, options: {}, cmd: Command) => {
-		if (config.has(key)) {
-			return config.get(key);
+		if (configStore.has(key)) {
+			return configStore.get(key);
 		}
 		logError(`"${key}" not found`);
 	});
@@ -36,9 +36,9 @@ export function createConfigCmd(config: Conf<Config>) {
 	const deleteCmd = command('delete <key>');
 	getCmd.description('delete the value of a setting');
 	getCmd.action((key: string, options: {}, cmd: Command) => {
-		if (config.has(key)) {
-			// @ts-ignore
-			config.delete(key);
+		if (configStore.has(key)) {
+			// @ts-ignore as library typechecks key names against the type specified during initialisation
+			configStore.delete(key);
 			logSuccess(`"${key}" deleted`);
 		}
 	});
@@ -49,16 +49,16 @@ export function createConfigCmd(config: Conf<Config>) {
 		const reset = await promptResetConfirmation(key);
 		if (reset === true) {
 			if (key === undefined) {
-				config.clear();
+				configStore.clear();
 				logSuccess('Configuration restored to default settings');
 				return;
 			}
-			if (config.has(key) === false) {
+			if (configStore.has(key) === false) {
 				logError(`"${key} not found`);
 				return;
 			}
 			// @ts-ignore
-			config.reset(key);
+			configStore.reset(key);
 			logSuccess(`"${key}" restored to its default setting`);
 		}
 	});
@@ -66,10 +66,11 @@ export function createConfigCmd(config: Conf<Config>) {
 	const listCmd = command('list');
 	listCmd.description('list settings');
 	listCmd.action((options: {}, cmd: Command) => {
-		console.log(config.store);
+		console.log(configStore.store);
 	});
 
 	const configCmd = command('config');
+	configCmd.addCommand(loadCmd);
 	configCmd.addCommand(setCmd);
 	configCmd.addCommand(getCmd);
 	configCmd.addCommand(listCmd);
@@ -85,7 +86,7 @@ async function promptResetConfirmation(key?: string): Promise<boolean> {
 		type: 'confirm',
 		name: 'reset',
 		initial: false,
-		message: `Please confirm that you wish to reset ${key !== undefined ? `"${key}" to its default value` : 'all keys to their defaults'}?`
+		message: `Please confirm that you wish to reset ${key !== undefined ? `"${key}" to its default value?` : 'all keys to their defaults?'}`
 	});
 	return reset;
 }

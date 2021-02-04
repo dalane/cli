@@ -1,6 +1,7 @@
 import * as jwt from 'jsonwebtoken';
 import { ALGORITHM, GRANT_TYPE } from './constants';
 import { createDomainInvalidTokenError, createDomainTokenExpiredError } from '../errors';
+import { createPemKeyFromJwk, Jwk } from './keys';
 
 export interface TokenOptions {
   issuer:string;
@@ -100,4 +101,38 @@ const convertAdapterErrorsToDomainErrors = (error:Error) => {
     default:
       return error;
   }
+};
+
+
+
+export const makeValidateTokenFn = (validateEncodedTokenFn:Function) => (keys:Jwk[]) => async <T extends TokenPayload>(token:string): Promise<Token<T>> => {
+
+	const decodedToken = decodeEncodedToken(token);
+
+	const idTokenSigningKid = decodedToken.header.kid;
+
+  const key = keys.find(key => key.kid === idTokenSigningKid);
+
+  if (key === undefined) {
+    throw new Error('A key that was used to sign the id_token was not found in the JWKS');
+  }
+
+	const pem = await createPemKeyFromJwk(key);
+
+	return await validateEncodedTokenFn(pem)(token);
+
+};
+
+export const makeValidateEncodedTokenFn = (issuer:string) => (audience:string|string[]) => (algorithms:ALGORITHM[]) => (pem:string) => async (token:string) => {
+
+	return await validateEncodedToken({
+
+		issuer: issuer,
+
+		audience: audience,
+
+		algorithms: algorithms
+
+	})(pem, token);
+
 };

@@ -3,6 +3,7 @@ import { TokenPayload, CreateTokenParams } from "./tokens";
 import { randomText, CHARSETS } from "../crypto";
 import { createPkceCodeVerifier, createPkceCodeChallenge } from "./pkce";
 import { stringify } from "../querystring";
+import { URLSearchParams } from "url";
 
 export const createAuthCodeFlowQueryParams = (clientId:string, redirectUri:string, scope?:string, state?:string, codeChallenge?:string, codeChallengeMethod?:CODE_VERIFIER_TRANSFORM) => ({
   response_type: 'code',
@@ -105,6 +106,14 @@ export interface AuthorisationParams {
   state: string;
   code_verifier: string;
   url: string;
+}
+
+export function createClientCredentialsTokenRequest(clientId: string, clientSecret: string): URLSearchParams {
+  const requestPayload = new URLSearchParams();
+  requestPayload.append('grant_type', GRANT_TYPE.CLIENT_CREDENTIALS);
+  requestPayload.append('client_id', clientId);
+  requestPayload.append('client_secret', clientSecret);
+  return requestPayload;
 }
 
 export function createAuthorisationParams(params: CreateAuthorisationParams) {
