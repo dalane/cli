@@ -1,12 +1,40 @@
-import Listr from "listr";
-import { AuthoriseTaskContext } from "./context";
+/**
+ * Authorises a client by obtaining tokens from the auth server using client
+ * credentials and saving them for future requests.
+ *
+ * Two tokens are received: access and refresh. The access token is used for
+ * each request. The refresh token is used to obtain a new access token if it
+ * has expired.
+ *
+ * If the client record included "openid" in its scope list then an ID token
+ * will also be received. This provides information on the user that is linked
+ * to the client.
+ */
+import Listr, { ListrContext } from "listr";
 import { prompt } from 'enquirer';
-import { fetchClientCredentialsAccessToken, fetchJwks, fetchOpenIdConfig } from "../../../fetch";
-import { OAuthTokenError } from "../../../common/auth/errors";
-import { AccessTokenPayload, OAuthTokenResponse, RefreshTokenPayload } from "../../../common/auth/oauth";
-import { IdentityTokenPayload } from "../../../common/auth/openid";
-import { makeValidateEncodedTokenFn, makeValidateTokenFn } from "../../../common/auth/tokens";
-import { convertSecondsToMilliseconds } from "../../../common/timestamp";
+import { fetchClientCredentialsAccessToken, fetchJwks, fetchOpenIdConfig } from "../fetch";
+import { OAuthTokenError } from "../common/auth/errors";
+import { AccessTokenPayload, OAuthTokenResponse, RefreshTokenPayload } from "../common/auth/oauth";
+import { IdentityTokenPayload, OpenIdConfiguration } from "../common/auth/openid";
+import { makeValidateEncodedTokenFn, makeValidateTokenFn } from "../common/auth/tokens";
+import { convertSecondsToMilliseconds } from "../common/timestamp";
+import { JsonWebKeySet } from "../common/auth/keys";
+import { Client, TokenState } from "../config";
+import { HttpError, postJson } from "../common/fetch";
+import { hostname } from "os";
+
+export interface AuthoriseTaskContext extends ListrContext {
+	user?: string;
+	password?: string;
+	oauth_wellknown_uri: string;
+	jwks_uri?: string;
+	audience: string[];
+	client: Client | null;
+	oauth_config?: OpenIdConfiguration;
+	jwks?: JsonWebKeySet;
+	tokenResponse?: OAuthTokenResponse;
+	validatedTokens?: TokenState
+}
 
 export type AuthoriseTaskRunner = (ctx: AuthoriseTaskContext) => Promise<AuthoriseTaskContext>;
 
@@ -25,38 +53,19 @@ export function createAuthoriseTaskRunner(): AuthoriseTaskRunner {
 	//			and auth server config
 	const task = new Listr<AuthoriseTaskContext>([
 		{
-			title: 'Client Credentials',
-			task: (ctx, task) => new Listr([
-				{
-					title: 'Client Id',
-					skip: (ctx) => ctx.client_id !== undefined,
-					task: async (ctx, task) => {
-						ctx.client_id = await promptClientId();
-					}
-				},
-				{
-					title: 'Client Secret',
-					skip: (ctx) => ctx.client_secret !== undefined,
-					task: async (ctx, task) => {
-						ctx.client_secret = await promptClientSecret();
-					}
-				}
-			])
-		},
-		{
 			title: 'Authorisation Server Discovery',
-			task: (ctx, task) => {
+			task: (ctx: AuthoriseTaskContext, task) => {
 				return new Listr([
 						{
 							title: `Retrieving OAuth / OIDC configuration`,
-							task: async () => {
+							task: async (ctx: AuthoriseTaskContext) => {
 								const { oauth_wellknown_uri } = ctx;
 								ctx.oauth_config = await fetchOpenIdConfig(oauth_wellknown_uri);
 							}
 						},
 						{
 							title: 'Retrieving Json WebKey set',
-							task: async (ctx, task) => {
+							task: async (ctx: AuthoriseTaskContext) => {
 								if (ctx.oauth_config === undefined) {
 									throw new Error('Unable to retrieve JSON web key set as that Authorisation Server config is missing');
 								}
@@ -72,12 +81,48 @@ export function createAuthoriseTaskRunner(): AuthoriseTaskRunner {
 			},
 		},
 		{
+			title: 'Dynamic Client Registration',
+			skip: (ctx: AuthoriseTaskContext) => ctx.client !== null,
+			task: async (ctx: AuthoriseTaskContext, task) => {
+				if (ctx.oauth_config === undefined) {
+					throw new Error('Unable to complete dynamic client registration as there is no OAuth server configuration');
+				}
+				const { registration_endpoint } = ctx.oauth_config['openid-configuration'];
+				if (registration_endpoint === undefined) {
+					throw new Error('Unable to register application. No endpoint on the authorisation server registered.');
+				}
+				const createClientRequestBody = {
+					application_type: 'service',
+					identifier: hostname(),
+					client_secret_expires_at: 0,
+					grant_types: [ 'client_credentials' ],
+					redirect_uris: [],
+					description: `Dalane CLI Client Application on "${hostname()}"`,
+					audiences: ctx.audience,
+					scope: '*',
+				};
+				const headers = !!ctx.user || !!ctx.password ? { authorization: `Basic ${Buffer.from(`${ctx.user}:${ctx.password}`).toString('base64')}`} : undefined;
+				const result = await postJson(registration_endpoint, createClientRequestBody, { headers });
+				if (result instanceof HttpError) {
+					throw new Error(`${result.url}, ${result.status}, ${result.body}`);
+				}
+				const { client_id, secret } = result.body;
+
+				ctx.client = {
+					client_id,
+					client_secret: secret,
+					scope: createClientRequestBody.scope,
+					identifier: createClientRequestBody.identifier,
+				};
+			}
+		},
+		{
 			title: 'Authorising client',
 			task: () => new Listr([
 				{
 					title: 'Requesting new tokens',
-					task: async (ctx, task) => {
-						const { oauth_config, client_id, client_secret } = ctx;
+					task: async (ctx: AuthoriseTaskContext, task) => {
+						const { oauth_config, client } = ctx;
 						if (oauth_config === undefined) {
 							throw new Error('Unable to request tokens as the OAuth Configuration has not been received.');
 						}
@@ -85,13 +130,11 @@ export function createAuthoriseTaskRunner(): AuthoriseTaskRunner {
 						if (token_endpoint === undefined) {
 							throw Error('token endpoint is undefined. Unable to request tokens.')
 						}
-						if (client_id === undefined) {
-							throw Error('Client Id is undefined. Unable to request tokens.')
+						if (client === null) {
+							throw Error('Client is undefined. Unable to request tokens.')
 						}
-						if (client_secret === undefined) {
-							throw Error('Client secret is undefined. Unable to request tokens.')
-						}
-						const fetchResult: OAuthTokenResponse | OAuthTokenError = await fetchClientCredentialsAccessToken(token_endpoint, client_id, client_secret);
+						const { client_id, client_secret, scope } = client;
+						const fetchResult: OAuthTokenResponse | OAuthTokenError = await fetchClientCredentialsAccessToken(token_endpoint, client_id, client_secret, scope);
 						if (fetchResult instanceof OAuthTokenError) {
 							throw fetchResult;
 						}
@@ -100,8 +143,8 @@ export function createAuthoriseTaskRunner(): AuthoriseTaskRunner {
 				},
 				{
 					title: 'Verifying tokens',
-					task: async (ctx, task) => {
-						const { tokenResponse, oauth_config, jwks, client_id, audience } = ctx;
+					task: async (ctx: AuthoriseTaskContext, task) => {
+						const { tokenResponse, oauth_config, jwks, client, audience } = ctx;
 						if (tokenResponse === undefined) {
 							throw Error('Unable to verify tokens as there was no token payload');
 						}
@@ -111,8 +154,8 @@ export function createAuthoriseTaskRunner(): AuthoriseTaskRunner {
 						if (jwks === undefined) {
 							throw new Error('Unable to verify tokens as the JSON Web Key Set has not been received.');
 						}
-						if (client_id === undefined) {
-							throw new Error('Unable to verify tokens as the client_id is undefined');
+						if (client === null) {
+							throw new Error('Unable to verify tokens as the client is undefined');
 						}
 						const { token_type: tokenType, id_token: idToken, access_token: accessToken, refresh_token: refreshToken, expires_in: expiresIn, refresh_token_expires_in, id_token_expires_in } = tokenResponse;
 						const { issuer, id_token_signing_alg_values_supported, token_endpoint_auth_signing_alg_values_supported } = oauth_config["openid-configuration"];
@@ -120,7 +163,7 @@ export function createAuthoriseTaskRunner(): AuthoriseTaskRunner {
 						const keys = jwks.keys;
 
 						// the audience for an ID Token is the client
-						const idTokenAudience = client_id;
+						const idTokenAudience = client.identifier;
 						const idTokenAlgorithmsSupported = id_token_signing_alg_values_supported;
 
 						const validateEncodedIdToken = makeValidateEncodedTokenFn(issuer)(idTokenAudience)(idTokenAlgorithmsSupported);

@@ -108,11 +108,23 @@ export interface AuthorisationParams {
   url: string;
 }
 
-export function createClientCredentialsTokenRequest(clientId: string, clientSecret: string): URLSearchParams {
+export function createClientCredentialsTokenRequest(clientId: string, clientSecret: string, scope: string): URLSearchParams {
   const requestPayload = new URLSearchParams();
   requestPayload.append('grant_type', GRANT_TYPE.CLIENT_CREDENTIALS);
   requestPayload.append('client_id', clientId);
   requestPayload.append('client_secret', clientSecret);
+  requestPayload.append('scope', scope);
+  return requestPayload;
+}
+
+export function createRefreshCredentialsTokenRequest(refreshToken: string, clientId: string, clientSecret?: string): URLSearchParams {
+  const requestPayload = new URLSearchParams();
+  requestPayload.append('grant_type', GRANT_TYPE.REFRESH_TOKEN);
+  requestPayload.append('client_id', clientId);
+  requestPayload.append('refresh_token', refreshToken);
+  if (clientSecret !== undefined) {
+    requestPayload.append('client_secret', clientSecret);
+  }
   return requestPayload;
 }
 

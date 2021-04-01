@@ -1,12 +1,12 @@
-import { ConfigStore, TokenStore } from "../../config";
+import { Client, ConfigStore, TokenStore } from "../../config";
 import { command, Command } from 'commander';
 import { createOAuthWellknownUri } from '../../oauth';
-import { AuthoriseTaskContext } from "./tasks/context";
-import { AuthoriseTaskRunner } from "./tasks";
+import { AuthoriseTaskRunner, AuthoriseTaskContext } from "../../tasks/authorise-task-runner";
 import { SUPPORTED_TOKEN_AUDIENCES } from "../../constants";
 
 export function createCmd(configStore: ConfigStore, tokenStore: TokenStore, taskRunner: AuthoriseTaskRunner) {
-	const getClientId = () => configStore.get('client_id') ?? undefined;
+	const getClient = () => configStore.get('client');
+	const setClient = (value: Client) => configStore.set('client', value);
 	const getOAuthWellKnownUri = () => {
 		const oauth_auth_server = configStore.get('oauth_auth_server');
 		if (oauth_auth_server === undefined) {
@@ -14,23 +14,28 @@ export function createCmd(configStore: ConfigStore, tokenStore: TokenStore, task
 		}
 		return createOAuthWellknownUri(oauth_auth_server);
 	};
-	const authoriseCmd = command('authorise');
-	authoriseCmd.description('Authorises the app to the Dalane Cloud APIs.')
-	authoriseCmd.alias('authorize');
-	authoriseCmd.option('-s, --client_secret <secret>', 'Provide a client secret. If missing, you will be prompted to enter a value.');
-	authoriseCmd.action(async (options: { client_secret?: string }, cmd: Command) => {
+	const cmd = command('authorise');
+	cmd.description('Authorises the app to the Dalane Cloud APIs.')
+	cmd.alias('authorize');
+	cmd.option('--user <username>', 'Specify username for dynamic client registration.');
+	cmd.option('--password <password>', 'Specify password for dynamic client registration.');
+	cmd.action(async (options: { user?: string; password?: string }, cmd: Command) => {
 		try {
-			const { client_secret } = options;
-			const client_id = getClientId();
+			const { user, password } = options;
 			const oauth_wellknown_uri = getOAuthWellKnownUri();
 			const ctx: AuthoriseTaskContext = {
 				oauth_wellknown_uri,
 				audience: SUPPORTED_TOKEN_AUDIENCES,
-				client_id,
-				client_secret,
+				user,
+				password,
+				client: getClient(),
 			};
 			const finalCtx: AuthoriseTaskContext = await taskRunner(ctx);
-			const { validatedTokens } = finalCtx;
+			const { validatedTokens, client } = finalCtx;
+			if (client === null) {
+				throw new Error('There were no client credentials obtained.');
+			}
+			setClient(client);
 			if (validatedTokens === undefined) {
 				throw new Error('There are no validated tokens to save');
 			}
@@ -39,5 +44,5 @@ export function createCmd(configStore: ConfigStore, tokenStore: TokenStore, task
 			console.error(`Authorisation was unable to complete. The following error was received: "${(<Error>error).message}".`)
 		}
 	});
-	return authoriseCmd;
+	return cmd;
 }

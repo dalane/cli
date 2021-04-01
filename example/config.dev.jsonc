@@ -1,8 +1,7 @@
 {
-	"client_id": "aa044e87-b4a3-488e-b11b-21f6274de22e",
 	"oauth_auth_server": "http://localhost:8000",
 	"api_uris": {
-		"accounts": "http://localhost:8001",
-		"projects": "http://localhost:9003"
+		"accounts": "http://localhost:8001/v1",
+		"projects": "http://localhost:9003/v1"
 	}
 }

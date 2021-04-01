@@ -1,0 +1,129 @@
+/*
+  interface Fixture{
+    name: string; // the name of the fixture, used to get parameters from the result
+    operationId: string; // the OpenApi schema operationID
+    idempotencyId?: string // if provided, ensures that if the fixtures are run again that the operation will not be duplicated by the server
+    data: any; // the requestBody
+  }
+*/
+{
+  "meta": {
+    "version": 1
+  },
+  "fixtures": [
+    {
+      "name": "user_johnsmith",
+      "operationId": "CreateUser",
+      "idempotencyId": "createuser_johnsmith",
+      "requestBody": {
+        // "user_id": "26e6888c-f8de-49cc-b70e-6cbe243e86f2",
+        "name": "John Smith",
+        "email": "example@example.com",
+        "email_verified": true,
+        "password": "password",
+        "user_type": "basic"
+      }
+    },
+    {
+      "name": "user_janecitizend",
+      "operationId": "CreateUser",
+      "idempotencyId": "createuser_janecitizen",
+      "requestBody": {
+        // "user_id": "aeaa8f58-cbc7-40df-89e9-49a5c12119f7",
+        "name": "Jane Citizen",
+        "email": "jane.c@example.com",
+        "email_verified": true,
+        "password": "password",
+        "user_type": "basic"
+      }
+    },
+    {
+      "name": "organisation_dalane",
+      "operationId": "AddOrganisation",
+      "idempotencyId": "createorg_dalane",
+      "requestBody": {
+        "name": "Dalane Consulting Ltd",
+        "owner_id": "${user_johnsmith:user_id}",
+        "address": {
+          "address_line_1": "49 Station Road",
+          "city": "Polegate",
+          "region": "East Sussex",
+          "postal_code": "BN26 6EA",
+          "country_code": "GB"
+        }
+      }
+    },
+    {
+      "name": "get_organisation",
+      "operationId": "FindOrganisationById",
+      "params": {
+        "organisation_id": "${organisation_dalane:organisation_id}"
+      }
+    },
+    {
+      "name": "trial_subscription_dalane",
+      "operationId": "AddTrialSubscription",
+      "params": {
+        "organisation_id": "${organisation_dalane:organisation_id}"
+      },
+      "idempotencyId": "add_trial_subscription_dalane",
+      "requestBody": {
+        "price_id": "price_1Hj7p44y7wrnWqzon9d54V1a"
+      }
+    }
+    // fixtures for  projects.api.dalane.cloud
+  //   {
+  //     "name": "createproject_001",
+  //     "operationId": "createProject",
+  //     "idempotencyId": "createproject_001",
+  //     "requestBody": {
+  //       "organisation_id": "${organisation_dalane:organisation_id}",
+  //       "friendly_id": "PROJ001",
+  //       "name": "Example Project 001",
+  //       "description": "First project",
+  //       "status": "Proposed",
+  //       "owner_id": "${user_johnsmith:user_id}"
+  //     }
+  //   },
+  //   {
+  //     "name": "createobs_proj001",
+  //     "operationId": "CreateProjectObs",
+  //     "idempotencyId": "createobs_proj001",
+  //     "params": {
+  //       "project_id": "${createproject_001:project_id}"
+  //     },
+  //     "requestBody": {
+  //       "method": "empty",
+  //       "data": [
+  //         {
+  //           "code": "PS",
+  //           "name": "Project Sponsor",
+  //           "description": "The project sponsor is the client's representative and leads the steering group.",
+  //           "children": [
+  //             {
+  //               "code": "SG",
+  //               "name": "Steering Group",
+  //               "description": "The steering group consists of key project stakeholders and experts to support the project sponsor."
+  //             },
+  //             {
+  //               "code": "PM",
+  //               "name": "Project Manager",
+  //               "description": "The project manager delivers the project to meet the client's outcomes.",
+  //               "children": [
+  //                 {
+  //                   "code": "APM",
+  //                   "name": "Assistant Project Manager"
+  //                 },
+  //                 {
+  //                   "code": "PO",
+  //                   "name": "Project Officer"
+  //                 }
+  //               ]
+  //             }
+  //           ]
+  //         }
+  //       ]
+  //     }
+  //   }
+  ]
+}

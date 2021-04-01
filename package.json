@@ -1,13 +1,15 @@
 {
   "name": "@dalane/cli",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "",
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
   "scripts": {
     "prepare": "npm run build",
     "prebuild": "rm -rf ./build",
-    "build": "tsc"
+    "build": "tsc",
+    "authorise": "./bin/dalane authorise --user system@dalane.cloud --password 3a8yyJL5kCQaW2wcignpKhy6Qxz6UykS",
+    "fixtures": "./bin/dalane fixtures ./example/fixtures.dev.jsonc"
   },
   "bin": {
     "dalane": "bin/dalane"
@@ -15,32 +17,36 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@dalane/accounts-api-client": "^0.0.3",
-    "@dalane/projects-api-client": "^0.0.2",
+    "@apidevtools/json-schema-ref-parser": "^9.0.7",
+    "@dalane/accounts-api-client": "github:dalane/accounts-api-client#v0.0.10",
+    "@dalane/projects-api-client": "github:dalane/projects-api-client#v0.0.17",
     "chalk": "^4.1.0",
     "commander": "^7.0.0",
     "conf": "^9.0.0",
     "content-type": "^1.0.4",
+    "debug": "^4.3.1",
     "eckles": "^1.4.1",
     "enquirer": "^2.3.6",
     "jsonc-parser": "^3.0.0",
     "jsonwebtoken": "^8.5.1",
     "listr": "^0.14.3",
     "node-fetch": "^2.6.1",
+    "openapi-client-axios-ts": "^3.9.9",
     "qoa": "^0.2.0",
     "qrcode-terminal": "^0.12.0",
     "query-string": "^6.13.8",
-    "source-map-support": "^0.5.19",
-    "yargs": "^16.2.0"
+    "source-map-support": "^0.5.19"
   },
   "devDependencies": {
     "@types/chalk": "^2.2.0",
     "@types/content-type": "^1.1.3",
+    "@types/debug": "^4.1.5",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/listr": "^0.14.2",
     "@types/node": "^14.14.22",
     "@types/node-fetch": "^2.5.8",
-    "@types/yargs": "^16.0.0",
+    "openapi-client-axios-ts-gen": "^1.11.3",
+    "openapi-types": "^7.2.3",
     "typescript": "^4.1.3"
   }
 }

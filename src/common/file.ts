@@ -4,7 +4,7 @@ import { resolve } from 'path';
 import { homedir } from 'os';
 import { parse } from "jsonc-parser";
 
-export async function loadJsonFile(path: string): Promise<any> {
+export async function loadJsonFile<T = unknown>(path: string): Promise<T> {
   const normalisedConfigFilePath = normalisePath(path);
   let contents = await readFile(normalisedConfigFilePath);
   if (contents instanceof Buffer) {

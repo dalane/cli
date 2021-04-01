@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "version": 1
+  },
+  "fixtures": [
+    {
+      "name": "user_johnsmith",
+      "operationId": "CreateUser",
+      "idempotencyId": "createuser_johnsmith",
+      "data": {
+        // "user_id": "26e6888c-f8de-49cc-b70e-6cbe243e86f2",
+        "name": "John Smith",
+        "email": "example@example.com",
+        "email_verified": true,
+        "password": "password",
+        "user_type": "basic"
+      }
+    },
+    {
+      "name": "user_janecitizend",
+      "operationId": "CreateUser",
+      "idempotencyId": "createuser_janecitizen",
+      "data": {
+        // "user_id": "aeaa8f58-cbc7-40df-89e9-49a5c12119f7",
+        "name": "Jane Citizen",
+        "email": "jane.c@example.com",
+        "email_verified": true,
+        "password": "password",
+        "user_type": "basic"
+      }
+    },
+    {
+      "name": "organisation_dalane",
+      "operationId": "AddOrganisation",
+      "idempotencyId": "createorg_dalane",
+      "data": {
+        "name": "Dalane Consulting Ltd",
+        "owner_id": "${user_johnsmith:user_id}",
+        "address": {
+          "address_line_1": "49 Station Road",
+          "city": "Polegate",
+          "region": "East Sussex",
+          "postal_code": "BN26 6EA",
+          "country_code": "GB"
+        }
+      }
+    },
+    {
+      "name": "get_organisation",
+      "operationId": "FindOrganisationById",
+      "params": {
+        "organisation_id": "${organisation_dalane:organisation_id}"
+      }
+    }
+  ]
+}

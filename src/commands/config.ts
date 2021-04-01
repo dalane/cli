@@ -1,7 +1,7 @@
 import { command, Command } from 'commander';
 import { logError, logSuccess } from '../common/console';
 import { prompt } from 'enquirer';
-import { ConfigStore } from '../config';
+import { ConfigState, ConfigStore } from '../config';
 import { loadJsonFile } from '../common/file';
 
 export function createConfigCmd(configStore: ConfigStore) {
@@ -9,7 +9,7 @@ export function createConfigCmd(configStore: ConfigStore) {
 	const loadCmd = command('load <path>');
 	loadCmd.description('Load config settings from a JSON or JSONC file.');
 	loadCmd.action(async (path: string, cmd: Command) => {
-		const config = await loadJsonFile(path);
+		const config = await loadJsonFile<ConfigState>(path);
 		configStore.set(config);
 	});
 

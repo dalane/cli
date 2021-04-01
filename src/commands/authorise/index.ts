@@ -1,7 +1,6 @@
 import { ConfigStore, TokenStore } from "../../config";
-import { AuthoriseTaskRunner, createAuthoriseTaskRunner } from "./tasks";
+import { AuthoriseTaskRunner, createAuthoriseTaskRunner } from "../../tasks/authorise-task-runner";
 import { createCmd } from './command';
-import { Command } from "../../common/commander";
 
 
 /**
